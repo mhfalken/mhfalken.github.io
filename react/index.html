@@ -1,30 +1,50 @@
 <!DOCTYPE html>
 <html>
 <style>
-table, th, td {
-  border:1px solid black;
-}
+table, 
+  th, td {border:1px solid black;border-collapse: collapse;}
+  th, td {padding-left: 10px; padding-right: 20px;}
 </style>
 <body>
 <h1>React hjælp</h1>
-  <h2>Man kan vælge mellem følgende spil:</h2>
+  <h2>Brug knapperne på boksen til at vælge spil</h2>
 
 <table>
+  <tr style='background-color: #D6EEEE'>
+    <td><b>Knap</b></td>
+    <td><b>Funktion</b></td>
+  </tr>
   <tr>
-    <td>1P1  </td>
+    <td align="center">Blå</td>
+    <td>Næste spil</td>
+  </tr>
+  <tr>
+    <td align="center">Grøn</td>
+    <td>Vælg spil</td>
+  </tr>
+
+</table>
+  <h2>Man kan vælge mellem følgende spil:</h2>
+<table>
+  <tr style='background-color: #D6EEEE'>
+    <td><b>Spil navn</b></td>
+    <td><b>Beskrivelse</b></td>
+  </tr>
+  <tr>
+    <td align="center">1P1</td>
     <td>1 Player 1 knap</td>
   </tr>
   <tr>
-    <td>1P2</td>
+    <td align="center">1P2</td>
     <td>1 Player 2 knapper</td>
   </tr>
   <tr>
-    <td>2P1</td>
-    <td>2 Players 1 knap hver</td>
+    <td align="center">2P1</td>
+    <td>2 Players 1 knap hver sin farve</td>
   </tr>
   <tr>
-    <td>2P2</td>
-    <td>2 Player 2 knapper hver</td>
+    <td align="center">2P2</td>
+    <td>2 Players 2 knapper hver sin farve</td>
   </tr>
 </table>
 </body>
