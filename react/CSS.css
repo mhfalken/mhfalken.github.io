@@ -1,0 +1,71 @@
+.Tutbox {
+    border: 2px solid gray; 
+    border-radius: 20px; 
+    font-family: Verdana, Geneva, Tahoma, sans-serif; 
+    font-size: 20px; 
+    box-sizing: border-box; 
+    width: 100%; 
+    margin-top: 0px; 
+    float: left; 
+    height: 240px;
+    color: #FFFFFF;
+    text-shadow: 2px 2px black;
+}
+
+.title {
+    text-align: center;
+    font-size: 200px;
+    color: white;
+    text-shadow: 5px 5px 5px black;
+    margin-bottom: 80px;
+    margin-top: 40px;
+}
+
+body {
+    background: blue;
+}
+
+.test {
+    background-color: red;
+    position: absolute;
+    width: 100%;
+    height: 50%;
+    left: 0px;
+    bottom: 50%;
+    z-index: -1;
+}
+
+table, th, td {
+    border: 2px solid gray;
+    border-radius: 20px;
+    color: white;
+    text-shadow: 2px 2px black;
+    text-align: center;
+}
+
+h0 {
+    font-size: 50px;
+}
+
+.credit {
+    left: 10%;
+    width: 80%;
+    height: 100px;
+    position: relative;
+    color: white;
+    border: 4px solid #008CBA;
+    border-radius: 20px;
+    text-align:  center;
+    text-decoration-line: none;
+    display: inline-block;
+    font-size: 80px;
+    font-weight: 800;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    text-shadow: 2px 2px 5px black;
+    transition-duration: 0.4s;
+}
+
+.credit:hover {
+    background-color: #008CBA;
+    color: white;
+}
