@@ -7,9 +7,13 @@
     body { font-family: sans-serif; max-width: 600px; margin: 2em auto; }
     #dropzone { border: 2px dashed #aaa; padding: 2em; text-align: center; cursor: pointer; }
     #fileInput { display: none; }
-    textarea, input, button, a { width: 100%; margin-top: 0.5em; }
-    textarea { height: 8em; font-family: monospace; }
+    textarea, input, button, a { margin-top: 0.5em; font-size: 0.9em; }
+    textarea { font-family: monospace; }
+    #output { width: 100%; height: 12em; background-color: #f5f5f5; }
+    #templateContainer { display: none; }
     a { color: blue; text-decoration: underline; cursor: pointer; display: inline-block; }
+    #varName { width: 100%; font-size: 1.2em; padding: 0.5em; }
+    /* Remove button-row styling */
   </style>
 </head>
 <body>
@@ -24,37 +28,37 @@
     <input type="text" id="varName" placeholder="e.g. my_data">
   </label>
 
-  <label>Template (use {{name}} and {{data}}):
-    <textarea id="template">
-// generated on {{date}}
-const unsigned char {{name}}[] PROGMEM = {
-{{data}}
-};
-    </textarea>
-  </label>
+  <button id="toggleTpl">Show Template</button>
+  <button id="resetTpl">Reset Template</button>
+  <div id="templateContainer">
+    <label>Template (use {{name}} and {{data}}):
+      <textarea id="template" rows="6" style="width:100%;"></textarea>
+    </label>
+  </div>
 
   <label>Output:
     <textarea id="output" readonly></textarea>
   </label>
 
+  <!-- Buttons restored to original positions -->
   <button id="copyBtn">Copy to Clipboard</button>
   <button id="downloadH">Download as .h</button>
   <button id="downloadC">Download as .c</button>
 
   <script>
+  const defaultTpl = `// generated on {{date}}
+const unsigned char {{name}}[] PROGMEM = {
+{{data}}
+};`;
   let fileBytes = null;
 
-  function toHex(b) {
-    return '0x' + ('0' + b.toString(16)).slice(-2);
-  }
-
+  function toHex(b) { return '0x' + ('0' + b.toString(16)).slice(-2); }
   function normalizeName(name) {
     let base = name.replace(/\.[^/.]+$/, '');
     let norm = base.replace(/[^A-Za-z0-9_]/g, '_');
     if (/^[0-9]/.test(norm)) norm = '_' + norm;
     return norm;
   }
-
   function updateOutput() {
     if (!fileBytes) return;
     const name = document.getElementById('varName').value.trim() || 'VARIABLE';
@@ -65,60 +69,35 @@ const unsigned char {{name}}[] PROGMEM = {
       lines.push('  ' + chunk.join(', '));
     }
     const dataBlock = lines.join(',\n');
-    const out = tpl
-      .replace(/{{\s*name\s*}}/g, name)
-      .replace(/{{\s*data\s*}}/g, dataBlock)
-      .replace(/{{\s*date\s*}}/g, new Date().toISOString());
+    const out = tpl.replace(/{{\s*name\s*}}/g, name)
+                   .replace(/{{\s*data\s*}}/g, dataBlock)
+                   .replace(/{{\s*date\s*}}/g, new Date().toISOString());
     document.getElementById('output').value = out;
   }
-
   function handleFile(file) {
     document.getElementById('varName').value = normalizeName(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      fileBytes = new Uint8Array(reader.result);
-      updateOutput();
-    };
+    const reader = new FileReader(); reader.onload = () => { fileBytes = new Uint8Array(reader.result); updateOutput(); };
     reader.readAsArrayBuffer(file);
   }
 
-  const fileInput = document.getElementById('fileInput');
-  fileInput.addEventListener('change', e => {
-    if (e.target.files.length) handleFile(e.target.files[0]);
-  });
-
+  const tplEl = document.getElementById('template');
+  const stored = localStorage.getItem('tpl'); tplEl.value = stored || defaultTpl;
+  document.getElementById('fileInput').addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
   const dz = document.getElementById('dropzone');
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#000'; });
   dz.addEventListener('dragleave', () => { dz.style.borderColor = '#aaa'; });
-  dz.addEventListener('drop', e => {
-    e.preventDefault(); dz.style.borderColor = '#aaa';
-    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-  });
-
-  document.getElementById('browseLink').addEventListener('click', () => {
-    fileInput.click();
-  });
-
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor = '#aaa'; if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+  document.getElementById('browseLink').addEventListener('click', () => document.getElementById('fileInput').click());
   document.getElementById('varName').addEventListener('input', updateOutput);
-  document.getElementById('template').addEventListener('input', updateOutput);
-
-  document.getElementById('copyBtn').addEventListener('click', () => {
-    updateOutput();
-    navigator.clipboard.writeText(document.getElementById('output').value)
-      .then(() => alert('Copied to clipboard'));
+  tplEl.addEventListener('input', () => { localStorage.setItem('tpl', tplEl.value); updateOutput(); });
+  document.getElementById('toggleTpl').addEventListener('click', () => {
+    const cont = document.getElementById('templateContainer'); const btn = document.getElementById('toggleTpl');
+    cont.style.display = cont.style.display === 'none' ? 'block' : 'none';
+    btn.textContent = cont.style.display === 'none' ? 'Show Template' : 'Hide Template';
   });
-
-  function download(ext) {
-    updateOutput();
-    const name = document.getElementById('varName').value || 'VARIABLE';
-    const blob = new Blob([document.getElementById('output').value], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${name}.${ext}`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
+  document.getElementById('resetTpl').addEventListener('click', () => { tplEl.value = defaultTpl; localStorage.removeItem('tpl'); updateOutput(); });
+  document.getElementById('copyBtn').addEventListener('click', () => { updateOutput(); navigator.clipboard.writeText(document.getElementById('output').value).then(() => alert('Copied')); });
+  function download(ext) { updateOutput(); const name = document.getElementById('varName').value || 'VARIABLE'; const blob = new Blob([document.getElementById('output').value], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${name}.${ext}`; a.click(); URL.revokeObjectURL(a.href); }
   document.getElementById('downloadH').addEventListener('click', () => download('h'));
   document.getElementById('downloadC').addEventListener('click', () => download('c'));
   </script>
