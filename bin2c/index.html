@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Binary to C-Header Generator</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2em auto; }
+    #dropzone { border: 2px dashed #aaa; padding: 2em; text-align: center; cursor: pointer; }
+    #fileInput { display: none; }
+    textarea, input, button, a { width: 100%; margin-top: 0.5em; }
+    textarea { height: 8em; font-family: monospace; }
+    a { color: blue; text-decoration: underline; cursor: pointer; display: inline-block; }
+  </style>
+</head>
+<body>
+  <h2>Binary → C-Header</h2>
+
+  <div id="dropzone">
+    Drop file here or <a id="browseLink">Upload file</a>
+    <input type="file" id="fileInput" accept="*/*">
+  </div>
+
+  <label>Variable name:
+    <input type="text" id="varName" placeholder="e.g. my_data">
+  </label>
+
+  <label>Template (use {{name}} and {{data}}):
+    <textarea id="template">
+// generated on {{date}}
+const unsigned char {{name}}[] PROGMEM = {
+{{data}}
+};
+    </textarea>
+  </label>
+
+  <label>Output:
+    <textarea id="output" readonly></textarea>
+  </label>
+
+  <button id="copyBtn">Copy to Clipboard</button>
+  <button id="downloadH">Download as .h</button>
+  <button id="downloadC">Download as .c</button>
+
+  <script>
+  let fileBytes = null;
+
+  function toHex(b) {
+    return '0x' + ('0' + b.toString(16)).slice(-2);
+  }
+
+  function normalizeName(name) {
+    let base = name.replace(/\.[^/.]+$/, '');
+    let norm = base.replace(/[^A-Za-z0-9_]/g, '_');
+    if (/^[0-9]/.test(norm)) norm = '_' + norm;
+    return norm;
+  }
+
+  function updateOutput() {
+    if (!fileBytes) return;
+    const name = document.getElementById('varName').value.trim() || 'VARIABLE';
+    const tpl = document.getElementById('template').value;
+    const lines = [];
+    for (let i = 0; i < fileBytes.length; i += 12) {
+      const chunk = Array.from(fileBytes.slice(i, i+12)).map(toHex);
+      lines.push('  ' + chunk.join(', '));
+    }
+    const dataBlock = lines.join(',\n');
+    const out = tpl
+      .replace(/{{\s*name\s*}}/g, name)
+      .replace(/{{\s*data\s*}}/g, dataBlock)
+      .replace(/{{\s*date\s*}}/g, new Date().toISOString());
+    document.getElementById('output').value = out;
+  }
+
+  function handleFile(file) {
+    document.getElementById('varName').value = normalizeName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      fileBytes = new Uint8Array(reader.result);
+      updateOutput();
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  const fileInput = document.getElementById('fileInput');
+  fileInput.addEventListener('change', e => {
+    if (e.target.files.length) handleFile(e.target.files[0]);
+  });
+
+  const dz = document.getElementById('dropzone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor = '#000'; });
+  dz.addEventListener('dragleave', () => { dz.style.borderColor = '#aaa'; });
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.style.borderColor = '#aaa';
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+
+  document.getElementById('browseLink').addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  document.getElementById('varName').addEventListener('input', updateOutput);
+  document.getElementById('template').addEventListener('input', updateOutput);
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    updateOutput();
+    navigator.clipboard.writeText(document.getElementById('output').value)
+      .then(() => alert('Copied to clipboard'));
+  });
+
+  function download(ext) {
+    updateOutput();
+    const name = document.getElementById('varName').value || 'VARIABLE';
+    const blob = new Blob([document.getElementById('output').value], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  document.getElementById('downloadH').addEventListener('click', () => download('h'));
+  document.getElementById('downloadC').addEventListener('click', () => download('c'));
+  </script>
+</body>
+</html>
